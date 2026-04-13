@@ -52,3 +52,13 @@
     grid-template-columns: 1fr;
   }
 }
+/* 未看标签样式 */
+.unread-badge {
+  display: inline-block;
+  background: #ffc107;
+  color: #222;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}

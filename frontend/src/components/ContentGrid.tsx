@@ -9,9 +9,6 @@ interface ContentGridProps {
   filter?: 'all' | 'viewed' | 'unviewed';
 }
 
-/**
- * 内容瀑布流组件 - 展示用户的收藏内容
- */
 export const ContentGrid: React.FC<ContentGridProps> = ({
   userId,
   refreshTrigger = 0,
@@ -35,8 +32,6 @@ export const ContentGrid: React.FC<ContentGridProps> = ({
 
       setHasMore(data.length === 20);
       setOffset(currentOffset + data.length);
-
-      // 更新用户的兴趣标签
       await tagApi.updateInterestTags(userId);
     } catch (error) {
       console.error('Failed to load contents:', error);
@@ -55,12 +50,23 @@ export const ContentGrid: React.FC<ContentGridProps> = ({
     loadContents(offset);
   };
 
-  const handleContentDelete = (contentId: string) => {
-    setContents((prev) => prev.filter((c) => c.id !== contentId));
+  // ✅ 修复：删除后永久消失（刷新不回来）
+  const handleContentDelete = async (contentId: string) => {
+    try {
+      await contentApi.deleteContent(contentId); // 真正从后端删除
+      setContents((prev) => prev.filter((c) => c.id !== contentId)); // 前端同步删除
+    } catch (err) {
+      console.error("删除失败", err);
+    }
   };
 
-  const handleContentViewed = () => {
-    loadContents(0);
+  // ✅ 修复：标记已看不会消失，只刷新状态
+  const handleContentViewed = (contentId: string, isViewed: boolean) => {
+    setContents(prev =>
+      prev.map(item =>
+        item.id === contentId ? { ...item, is_viewed: isViewed } : item
+      )
+    );
   };
 
   const filteredContents = contents.filter((content) => {
@@ -83,7 +89,9 @@ export const ContentGrid: React.FC<ContentGridProps> = ({
             key={content.id}
             {...content}
             tags={content.tags || []}
-            onViewedChange={handleContentViewed}
+            onViewedChange={(isViewed: boolean) =>
+              handleContentViewed(content.id, isViewed)
+            }
             onDelete={() => handleContentDelete(content.id)}
           />
         ))}
