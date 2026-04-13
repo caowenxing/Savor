@@ -1,0 +1,140 @@
+/* App Layout Styles */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.app-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: var(--spacing-lg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.logo-svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.logo-text {
+  h1 {
+    font-size: 28px;
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .tagline {
+    font-size: 12px;
+    margin: 4px 0 0 0;
+    opacity: 0.9;
+  }
+}
+
+.user-info {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.app-nav {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: white;
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.nav-btn {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border: 2px solid transparent;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--text-light);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+
+  &:hover {
+    color: var(--primary-color);
+  }
+
+  &.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+  }
+}
+
+.app-main {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+}
+
+.tab-content {
+  background: white;
+  border-radius: 8px;
+  padding: var(--spacing-lg);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.app-footer {
+  text-align: center;
+  padding: var(--spacing-lg);
+  color: white;
+  font-size: 14px;
+  opacity: 0.8;
+  margin-top: auto;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    text-align: center;
+  }
+
+  .logo h1 {
+    font-size: 24px;
+  }
+
+  .app-nav {
+    gap: 0;
+  }
+
+  .nav-btn {
+    flex: 1;
+    text-align: center;
+    padding: var(--spacing-md);
+  }
+
+  .app-main {
+    padding: var(--spacing-md);
+  }
+
+  .tab-content {
+    padding: var(--spacing-md);
+  }
+}
