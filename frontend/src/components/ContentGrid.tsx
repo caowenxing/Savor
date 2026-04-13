@@ -82,6 +82,7 @@ export const ContentGrid: React.FC<ContentGridProps> = ({
           <ContentCard
             key={content.id}
             {...content}
+            tags={content.tags || []}
             onViewedChange={handleContentViewed}
             onDelete={() => handleContentDelete(content.id)}
           />

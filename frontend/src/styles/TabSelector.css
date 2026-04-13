@@ -40,6 +40,28 @@
   }
 }
 
+.form-textarea {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 16px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+  }
+
+  &::placeholder {
+    color: #bdc3c7;
+  }
+}
+
 .btn-primary {
   width: 100%;
   padding: var(--spacing-md) var(--spacing-lg);

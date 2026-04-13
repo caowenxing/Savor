@@ -24,22 +24,31 @@ export function extractKeywordsFromTitle(title: string): string[] {
 export async function autoGenerateContentTags(
   contentId: string,
   title: string,
-  description?: string
+  description?: string,
+  keywords?: string[]
 ): Promise<void> {
-  const keywords = extractKeywordsFromTitle(title);
+  let allKeywords: string[] = [];
   
-  // 如果有描述，也从描述中提取
-  if (description) {
-    const descKeywords = extractKeywordsFromTitle(description).slice(0, 2);
-    keywords.push(...descKeywords);
+  // 如果提供了关键词，直接使用
+  if (keywords && keywords.length > 0) {
+    allKeywords = keywords.slice(0, 10); // 限制数量
+  } else {
+    // 否则从标题提取
+    allKeywords = extractKeywordsFromTitle(title);
+    
+    // 如果有描述，也从描述中提取
+    if (description) {
+      const descKeywords = extractKeywordsFromTitle(description).slice(0, 2);
+      allKeywords.push(...descKeywords);
+    }
   }
 
-  for (const keyword of keywords) {
+  for (const keyword of allKeywords) {
     await sql`
       INSERT INTO content_tags (id, content_id, tag_name, tag_type, confidence, created_at)
-      VALUES (gen_random_uuid(), $1, $2, 'auto', 0.7, NOW())
+      VALUES (gen_random_uuid(), ${contentId}, ${keyword}, 'auto', 0.7, NOW())
       ON CONFLICT DO NOTHING
-    `(contentId, keyword);
+    `;
   }
 }
 
@@ -52,9 +61,9 @@ export async function confirmContentTag(
 ): Promise<ContentTag> {
   const result = await sql`
     INSERT INTO content_tags (id, content_id, tag_name, tag_type, confidence, created_at)
-    VALUES (gen_random_uuid(), $1, $2, 'user_confirmed', 1.0, NOW())
+    VALUES (gen_random_uuid(), ${contentId}, ${tagName}, 'user_confirmed', 1.0, NOW())
     RETURNING *
-  `(contentId, tagName);
+  `;
 
   return result[0];
 }
@@ -71,14 +80,14 @@ export async function recordBehaviorTag(
 ): Promise<BehaviorTag> {
   const result = await sql`
     INSERT INTO behavior_tags (id, content_id, user_id, stay_time, click_count, rewatch_count, generated_at)
-    VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, NOW())
+    VALUES (gen_random_uuid(), ${contentId}, ${userId}, ${stayTime}, ${clickCount}, ${rewatchCount}, NOW())
     ON CONFLICT (content_id, user_id) DO UPDATE SET
-      stay_time = behavior_tags.stay_time + $3,
-      click_count = behavior_tags.click_count + $4,
-      rewatch_count = behavior_tags.rewatch_count + $5,
+      stay_time = behavior_tags.stay_time + ${stayTime},
+      click_count = behavior_tags.click_count + ${clickCount},
+      rewatch_count = behavior_tags.rewatch_count + ${rewatchCount},
       generated_at = NOW()
     RETURNING *
-  `(contentId, userId, stayTime, clickCount, rewatchCount);
+  `;
 
   return result[0];
 }
@@ -98,14 +107,14 @@ export async function updateInterestTags(userId: string): Promise<InterestTag[]>
         SUM(bt.rewatch_count) as total_rewatches
       FROM content_tags ct
       JOIN saved_contents sc ON ct.content_id = sc.id
-      LEFT JOIN behavior_tags bt ON ct.content_id = bt.content_id AND bt.user_id = $1
-      WHERE sc.user_id = $1
+      LEFT JOIN behavior_tags bt ON ct.content_id = bt.content_id AND bt.user_id = ${userId}
+      WHERE sc.user_id = ${userId}
       GROUP BY ct.tag_name
       ORDER BY frequency DESC, total_rewatches DESC
       LIMIT 10
     )
     INSERT INTO interest_tags (id, user_id, tag_name, confidence, last_triggered_at, created_at)
-    SELECT gen_random_uuid(), $1, tag_name, 
+    SELECT gen_random_uuid(), ${userId}, tag_name, 
            LEAST(frequency / 10.0, 1.0) as confidence,
            NOW(),
            NOW()
@@ -114,7 +123,7 @@ export async function updateInterestTags(userId: string): Promise<InterestTag[]>
       confidence = LEAST(interest_tags.confidence + 0.1, 1.0),
       last_triggered_at = NOW()
     RETURNING *
-  `(userId);
+  `;
 
   return result;
 }
@@ -125,9 +134,9 @@ export async function updateInterestTags(userId: string): Promise<InterestTag[]>
 export async function getUserInterestTags(userId: string): Promise<InterestTag[]> {
   const result = await sql`
     SELECT * FROM interest_tags 
-    WHERE user_id = $1 
+    WHERE user_id = ${userId} 
     ORDER BY confidence DESC
-  `(userId);
+  `;
 
   return result;
 }
@@ -138,9 +147,9 @@ export async function getUserInterestTags(userId: string): Promise<InterestTag[]
 export async function getContentTags(contentId: string): Promise<ContentTag[]> {
   const result = await sql`
     SELECT * FROM content_tags 
-    WHERE content_id = $1 
+    WHERE content_id = ${contentId} 
     ORDER BY confidence DESC
-  `(contentId);
+  `;
 
   return result;
 }

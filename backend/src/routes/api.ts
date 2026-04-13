@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import sql from '../db';
 import * as contentService from '../services/contentService';
 import * as tagService from '../services/tagService';
 import * as recommendationService from '../services/recommendationService';
@@ -12,13 +13,13 @@ const router = Router();
 // 导入新收藏
 router.post('/contents/import', async (req: Request, res: Response) => {
   try {
-    const { userId, url, title } = req.body;
+    const { userId, url, title, useAI } = req.body;
 
     if (!userId || !url) {
       return res.status(400).json({ error: 'Missing required fields: userId, url' });
     }
 
-    const content = await contentService.importContent(userId, url, title);
+    const content = await contentService.importContent(userId, url, title, useAI || false);
     res.json({ success: true, data: content });
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
@@ -181,6 +182,50 @@ router.post('/wakeup/daily', async (req: Request, res: Response) => {
 
     const wakeupIds = await recommendationService.triggerDailyWakeup(userId);
     res.json({ success: true, data: { wakeup_count: wakeupIds.length, content_ids: wakeupIds } });
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+});
+
+// 更新收藏内容
+router.put('/contents/:contentId', async (req: Request, res: Response) => {
+  try {
+    const { contentId } = req.params;
+    const { title, url } = req.body;
+
+    if (!title && !url) {
+      return res.status(400).json({ error: 'At least one field (title or url) must be provided' });
+    }
+
+    let result;
+    if (title && url) {
+      result = await sql`
+        UPDATE saved_contents
+        SET title = ${title}, url = ${url}, updated_at = NOW()
+        WHERE id = ${contentId}
+        RETURNING *
+      `;
+    } else if (title) {
+      result = await sql`
+        UPDATE saved_contents
+        SET title = ${title}, updated_at = NOW()
+        WHERE id = ${contentId}
+        RETURNING *
+      `;
+    } else {
+      result = await sql`
+        UPDATE saved_contents
+        SET url = ${url}, updated_at = NOW()
+        WHERE id = ${contentId}
+        RETURNING *
+      `;
+    }
+
+    if (result.length === 0) {
+      return res.status(404).json({ error: 'Content not found' });
+    }
+
+    res.json({ success: true, data: result[0] });
   } catch (error) {
     res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
   }

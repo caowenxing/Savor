@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { AddTab } from './components/AddTab';
 import { ContentGrid } from './components/ContentGrid';
 import { RecommendationTab } from './components/RecommendationTab';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
+import { LanguageProvider } from './contexts/LanguageContext';
 import { SavorLogo } from './components/SavorLogo';
-import './styles/App.css';
 
 type TabType = 'explore' | 'add' | 'recommendations';
 
@@ -31,21 +32,23 @@ function App() {
   };
 
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <div className="header-content">
-          <div className="logo">
-            <SavorLogo size={40} className="logo-svg" />
-            <div className="logo-text">
-              <h1>Savor</h1>
-              <p className="tagline">让收藏成为持续的价值</p>
+    <LanguageProvider>
+      <div className="app-container">
+        <header className="app-header">
+          <div className="header-content">
+            <div className="logo">
+              <SavorLogo size={40} className="logo-svg" />
+              <div className="logo-text">
+                <h1>Savor</h1>
+                <p className="tagline">让收藏成为持续的价值</p>
+              </div>
+            </div>
+            <div className="user-info">
+              <LanguageSwitcher />
+              <span>User: {userId.slice(0, 8)}...</span>
             </div>
           </div>
-          <div className="user-info">
-            User: {userId.slice(0, 8)}...
-          </div>
-        </div>
-      </header>
+        </header>
 
       <nav className="app-nav">
         <button
@@ -96,6 +99,7 @@ function App() {
         <p>Savor v1.0 MVP - 让内容重获新生</p>
       </footer>
     </div>
+    </LanguageProvider>
   );
 }
 

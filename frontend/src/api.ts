@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -11,8 +11,8 @@ const api = axios.create({
  */
 export const contentApi = {
   // 导入新收藏
-  importContent: async (userId: string, url: string, title?: string) => {
-    const response = await api.post('/contents/import', { userId, url, title });
+  importContent: async (userId: string, url: string, title?: string, useAI?: boolean) => {
+    const response = await api.post('/contents/import', { userId, url, title, useAI });
     return response.data.data;
   },
 

@@ -56,8 +56,8 @@ async function calculateLongTermValue(
   // 查询内容的标签
   const tags = await sql`
     SELECT ct.tag_name, ct.confidence FROM content_tags ct
-    WHERE ct.content_id = $1
-  `(contentId);
+    WHERE ct.content_id = ${contentId}
+  `;
 
   if (tags.length === 0) return 0.3; // 无标签默认0.3
 
@@ -66,9 +66,9 @@ async function calculateLongTermValue(
   for (const tag of tags) {
     const interestResult = await sql`
       SELECT confidence FROM interest_tags 
-      WHERE user_id = $1 AND tag_name = $2
+      WHERE user_id = ${userId} AND tag_name = ${tag.tag_name}
       LIMIT 1
-    `(userId, tag.tag_name);
+    `;
 
     if (interestResult.length > 0) {
       const combined =
@@ -101,7 +101,7 @@ export async function getRecommendations(
         COALESCE(EXTRACT(DAY FROM NOW() - sc.last_viewed_at)::int, EXTRACT(DAY FROM NOW() - sc.created_at)::int) as days_since_last_viewed,
         sc.is_viewed
       FROM saved_contents sc
-      WHERE sc.user_id = $1 AND NOT sc.is_viewed
+      WHERE sc.user_id = ${userId} AND NOT sc.is_viewed
       ORDER BY sc.created_at DESC
       LIMIT 1000
     )
@@ -116,7 +116,7 @@ export async function getRecommendations(
       days_since_last_viewed,
       is_viewed
     FROM content_scores
-  `(userId);
+  `;
 
   // 计算每条内容的推荐分数
   const recommendationScores: (RecommendationScore & { id: string; title: string; url: string; source: string; created_at: Date })[] = [];
@@ -152,9 +152,9 @@ export async function getRecommendations(
 
   const result = await sql`
     SELECT * FROM saved_contents 
-    WHERE id = ANY($1)
-    ORDER BY ARRAY_POSITION($1::uuid[], id)
-  `(topIds);
+    WHERE id = ANY(${topIds})
+    ORDER BY ARRAY_POSITION(${topIds}::uuid[], id)
+  `;
 
   return result;
 }
@@ -187,17 +187,17 @@ export async function triggerDailyWakeup(userId: string): Promise<string[]> {
     JOIN content_tags ct ON sc.id = ct.content_id
     JOIN interest_tags it ON ct.tag_name = it.tag_name
     WHERE 
-      sc.user_id = $1
+      sc.user_id = ${userId}
       AND NOT sc.is_viewed
       AND EXTRACT(DAY FROM NOW() - sc.created_at) >= 3
       AND EXTRACT(DAY FROM NOW() - sc.created_at) <= 30
-      AND it.user_id = $1
+      AND it.user_id = ${userId}
     GROUP BY sc.id
     ORDER BY EXTRACT(DAY FROM NOW() - sc.created_at) DESC
     LIMIT 5
-  `(userId);
+  `;
 
-  const contentIds = wakeupContents.map(w => w.id);
+  const contentIds = wakeupContents.map((w: { id: string }) => w.id);
 
   // 记录唤醒事件
   if (contentIds.length > 0) {
@@ -205,14 +205,14 @@ export async function triggerDailyWakeup(userId: string): Promise<string[]> {
       INSERT INTO wakeup_records (id, content_id, user_id, wakeup_type, triggered_at, wakeup_time)
       SELECT 
         gen_random_uuid(), 
-        unnest($1::uuid[]), 
-        $2, 
+        unnest(${contentIds}::uuid[]), 
+        ${userId}, 
         'long_term_recall', 
         NOW(),
         EXTRACT(DAY FROM NOW() - sc.created_at)::int
       FROM saved_contents sc
-      WHERE sc.id = ANY($1)
-    `(contentIds, userId);
+      WHERE sc.id = ANY(${contentIds})
+    `;
   }
 
   return contentIds;
